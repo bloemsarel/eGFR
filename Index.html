@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>eGFR Calculator & CKD Staging</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #2c3e50; }
+    label { display: block; margin-top: 10px; }
+    input, select, button { margin-top: 5px; padding: 5px; }
+    #result { margin-top: 20px; font-weight: bold; }
+    table { border-collapse: collapse; margin-top: 20px; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+  </style>
+</head>
+<body>
+  <h1>eGFR Calculator (CKD-EPI 2021)</h1>
+  <form id="egfrForm">
+    <label>Age (years): <input type="number" id="age" required></label>
+    <label>Sex:
+      <select id="sex">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+    </label>
+    <label>Serum Creatinine (µmol/L): <input type="number" step="0.1" id="scr" required></label>
+    <button type="button" onclick="calculateEGFR()">Calculate eGFR</button>
+  </form>
+
+  <div id="result"></div>
+
+  <h2>CKD Staging</h2>
+  <table>
+    <tr><th>Stage</th><th>eGFR (mL/min/1.73m²)</th><th>Description</th></tr>
+    <tr><td>G1</td><td>≥ 90</td><td>Normal or high</td></tr>
+    <tr><td>G2</td><td>60–89</td><td>Mildly decreased</td></tr>
+    <tr><td>G3a</td><td>45–59</td><td>Mild to moderate decrease</td></tr>
+    <tr><td>G3b</td><td>30–44</td><td>Moderate to severe decrease</td></tr>
+    <tr><td>G4</td><td>15–29</td><td>Severely decreased</td></tr>
+    <tr><td>G5</td><td>&lt; 15</td><td>Kidney failure</td></tr>
+  </table>
+
+  <script>
+    function calculateEGFR() {
+      const age = parseFloat(document.getElementById('age').value);
+      const sex = document.getElementById('sex').value;
+      const scr_umol = parseFloat(document.getElementById('scr').value);
+
+      // Convert µmol/L to mg/dL
+      const scr = scr_umol / 88.4;
+
+      let kappa = sex === 'female' ? 0.7 : 0.9;
+      let alpha = sex === 'female' ? -0.241 : -0.302;
+
+      let minScr = Math.min(scr / kappa, 1);
+      let maxScr = Math.max(scr / kappa, 1);
+
+      let egfr = 142 * Math.pow(minScr, alpha) * Math.pow(maxScr, -1.200) * Math.pow(0.9938, age);
+      if (sex === 'female') egfr *= 1.012;
+
+      egfr = Math.round(egfr);
+
+      let stage = '';
+      if (egfr >= 90) stage = 'G1 (Normal/High)';
+      else if (egfr >= 60) stage = 'G2 (Mildly decreased)';
+      else if (egfr >= 45) stage = 'G3a (Mild to moderate)';
+      else if (egfr >= 30) stage = 'G3b (Moderate to severe)';
+      else if (egfr >= 15) stage = 'G4 (Severely decreased)';
+      else stage = 'G5 (Kidney failure)';
+
+      document
